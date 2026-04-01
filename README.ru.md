@@ -47,7 +47,10 @@ touch /path/to/.mcp-reconnect
 
 ## Как это работает
 
-Claude Code VSCode игнорирует `notifications/tools/list_changed` от MCP-серверов ([issue #4118](https://github.com/anthropics/claude-code/issues/4118)). Патч встраивает IIFE в `extension.js`:
+Claude Code VSCode игнорирует `notifications/tools/list_changed` от MCP-серверов ([issue #4118](https://github.com/anthropics/claude-code/issues/4118)).
+Это заявленная, но нерабочая способность. 
+
+Патч встраивает IIFE в `extension.js`:
 
 ```
 setInterval(2000ms)
