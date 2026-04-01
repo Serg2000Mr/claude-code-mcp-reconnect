@@ -34,7 +34,10 @@ python apply_patch.py
 **3. Trigger from your build script** — add at the end, after a successful rebuild:
 
 ```bash
+# Git Bash:
 touch /path/to/.mcp-reconnect
+# PowerShell:
+# (New-Item -Force /path/to/.mcp-reconnect).LastWriteTime = Get-Date
 ```
 
 **4. Verify** — open Output → Claude Code: Show Logs. After the next rebuild:
@@ -86,7 +89,10 @@ If it prints `NEEDS PATCH`: re-run `apply_patch.py` + Reload Window.
 Before re-patching, check if Anthropic shipped a native fix — if so, the patch is no longer needed:
 
 ```bash
+# Git Bash:
 gh api repos/anthropics/claude-code/releases/latest --jq '.body' | grep -i mcp
+# PowerShell:
+# gh api repos/anthropics/claude-code/releases/latest --jq '.body' | Select-String mcp
 ```
 
 ---

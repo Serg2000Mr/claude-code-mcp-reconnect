@@ -34,7 +34,10 @@ python apply_patch.py
 **3. Триггер из скрипта сборки** — добавить в конец после успешной пересборки:
 
 ```bash
+# Git Bash:
 touch /path/to/.mcp-reconnect
+# PowerShell:
+# (New-Item -Force /path/to/.mcp-reconnect).LastWriteTime = Get-Date
 ```
 
 **4. Проверить** — открыть Output → Claude Code: Show Logs. После следующей сборки:
@@ -86,7 +89,10 @@ print('OK' if 'MCP auto-reconnect patch' in open(f).read() else 'NEEDS PATCH: '+
 Перед повторным патчем проверьте, не вышел ли нативный фикс — тогда патч больше не нужен:
 
 ```bash
+# Git Bash:
 gh api repos/anthropics/claude-code/releases/latest --jq '.body' | grep -i mcp
+# PowerShell:
+# gh api repos/anthropics/claude-code/releases/latest --jq '.body' | Select-String mcp
 ```
 
 ---
