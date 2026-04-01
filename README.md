@@ -2,9 +2,17 @@
 
 [**Русская версия**](README.ru.md)
 
-After rebuilding your MCP server, all open Claude Code chats show stale tools until you manually reconnect each tab. This patch makes reconnect automatic — your build script touches a flag file and all open chats refresh within 2 seconds.
+You are developing or refining an MCP server. After each rebuild, all open Claude Code chats show stale tools.
+You have to constantly do one of the following:
+ * reload VS Code
+ * Ctrl+Shift+P → Developer: Reload Window
+ * run `/mcp` and click Reconnect on the server — and this only affects the current chat
 
-> **Platform**: Windows, VSCode. Tested on Claude Code extension v2.1.87–v2.1.89.
+This forces you to stay glued to the process and nudge it forward manually.
+
+This patch makes reconnect automatic: the build script updates a flag file and all open chats refresh the MCP server within 2 seconds.
+
+> **Platform**: Windows, VSCode. Tested on Claude Code v2.1.87–v2.1.89.
 
 ---
 
@@ -37,9 +45,12 @@ touch /path/to/.mcp-reconnect
 
 ---
 
-## Background
+## How it works
 
-Claude Code VSCode ignores `notifications/tools/list_changed` from MCP servers ([issue #4118](https://github.com/anthropics/claude-code/issues/4118)). The workaround patches `extension.js` directly with an IIFE:
+Claude Code VSCode ignores `notifications/tools/list_changed` from MCP servers ([issue #4118](https://github.com/anthropics/claude-code/issues/4118)).
+This is a declared but non-working capability.
+
+The patch injects an IIFE into `extension.js`:
 
 ```
 setInterval(2000ms)
