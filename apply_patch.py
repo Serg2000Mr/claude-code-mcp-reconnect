@@ -63,10 +63,13 @@ PATCH = (
     '});'
     'Promise.allSettled(p).then(function(r){'
     'inFlight=false;'
-    'var fail=r.filter(function(x){return x.status==="rejected";}).length;'
-    'if(!fail){lastTs=pendingTs;console.log("[patch] All "+r.length+" channels reconnected OK");}'
-    'else if(++retries>=3){lastTs=pendingTs;console.log("[patch] "+fail+"/"+r.length+" channels failed after 3 retries — tools may be stale. Open Output > Claude Code: Show Logs.");}'
-    'else{console.log("[patch] "+fail+"/"+r.length+" channels failed, retrying ("+retries+"/3)...");}'
+    'var failed=r.filter(function(x){return x.status==="rejected";});'
+    'if(!failed.length){lastTs=pendingTs;console.log("[patch] All "+r.length+" channels reconnected OK");}'
+    'else{'
+    'var reasons=failed.map(function(x){return String(x.reason);}).join("; ");'
+    'if(++retries>=3){lastTs=pendingTs;console.log("[patch] "+failed.length+"/"+r.length+" channels failed after 3 retries (giving up): "+reasons);}'
+    'else{console.log("[patch] "+failed.length+"/"+r.length+" channels failed, retrying ("+retries+"/3): "+reasons);}'
+    '}'
     '});'
     '}catch(e){console.log("[patch] error: "+e);}'
     '},2000);'
@@ -75,13 +78,19 @@ PATCH = (
     '/* --- end patch --- */'
 )
 
-MARKER = "MCP auto-reconnect patch"
+PATCH_START = "/* --- MCP auto-reconnect patch --- */"
+PATCH_END   = "/* --- end patch --- */"
 
 with open(EXT_JS, encoding="utf-8") as f:
     content = f.read()
 
-if MARKER in content:
-    sys.exit("Already patched — skipping.")
+if PATCH_START in content:
+    start = content.find(PATCH_START)
+    end   = content.find(PATCH_END)
+    if end == -1:
+        sys.exit("ERROR: patch start marker found but end marker missing — file may be corrupted. Restore from .bak or reinstall the extension.")
+    content = content[:start] + content[end + len(PATCH_END):]
+    print("Existing patch removed — re-applying with current configuration.")
 
 if ANCHOR not in content:
     sys.exit(
