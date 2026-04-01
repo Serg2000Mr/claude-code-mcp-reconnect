@@ -2,64 +2,34 @@
 
 [**English version**](README.md)
 
-Обходное решение для [anthropics/claude-code#4118](https://github.com/anthropics/claude-code/issues/4118): расширение Claude Code для VSCode игнорирует уведомление `notifications/tools/list_changed` от MCP-серверов. После пересборки MCP-сервера все открытые чаты показывают устаревший список инструментов — до тех пор, пока вручную не выполнить `/mcp` → Reconnect в каждой вкладке.
+После пересборки MCP-сервера все открытые чаты Claude Code показывают устаревший список инструментов — до тех пор, пока не переподключить каждую вкладку вручную. Этот патч делает переподключение автоматическим: скрипт сборки трогает файл-флаг, все открытые чаты обновляются за 2 секунды.
 
-Патч встраивает IIFE в `extension.js`: следит за файлом-флагом и автоматически вызывает `reconnectMcpServer`. Скрипт сборки делает `touch .mcp-reconnect` — и все открытые чаты переподключаются в течение 2 секунд.
-
-> **Платформа**: только Windows (проверено на VSCode + Claude Code v2.1.87–v2.1.89).
+> **Платформа**: Windows, VSCode. Проверено на Claude Code v2.1.87–v2.1.89.
 
 ---
 
-## Как работает
+## Быстрый старт
 
-```
-скрипт сборки
-  └── touch .mcp-reconnect          ← сигнал «сервер пересобран»
-
-extension.js (пропатченный)
-  └── setInterval(2000ms)
-        ├── mtimeMs файла .mcp-reconnect изменился?
-        └── да → перебираем Z.allComms (все открытые чаты)
-                    └── reconnectMcpServer(channelId, serverName)
-```
-
-**Стабильные идентификаторы** (не минифицируются, сохраняются при обновлениях):
-- `allComms` — `Set` всех активных чатов
-- `reconnectMcpServer(channelId, name)` — API переподключения
-
-**Что может измениться при обновлении**: минифицированные имена переменных в якоре вставки (`K`, `Z`, `M6`). При изменении скрипт сообщает об ошибке явно — адаптация занимает несколько минут (см. [Когда расширение обновляется](#когда-расширение-обновляется)).
-
----
-
-## Установка
-
-### 1. Настроить `apply_patch.py`
-
-Отредактировать две переменные вверху файла:
+**1. Настроить** — отредактировать две строки вверху `apply_patch.py`:
 
 ```python
-SERVER_NAME = "your-mcp-server-name"       # из .vscode/settings.json → mcp → servers
+SERVER_NAME = "your-mcp-server-name"     # из .vscode/settings.json → mcp → servers
 FLAG_FILE   = r"C:\path\to\your\.mcp-reconnect"
 ```
 
-### 2. Применить патч
+**2. Пропатчить** — запустить один раз, затем перезагрузить VSCode (`Ctrl+Shift+P` → Developer: Reload Window):
 
 ```bash
 python apply_patch.py
 ```
 
-Затем перезагрузить VSCode: `Ctrl+Shift+P` → **Developer: Reload Window**
-
-### 3. Добавить в скрипт сборки
+**3. Триггер из скрипта сборки** — добавить в конец после успешной пересборки:
 
 ```bash
-# в конце скрипта сборки, после успешной пересборки:
 touch /path/to/.mcp-reconnect
 ```
 
-### 4. Проверить
-
-Открыть **Claude Code: Show Logs** (панель Output). После следующей сборки должно появиться:
+**4. Проверить** — открыть Output → Claude Code: Show Logs. После следующей сборки:
 
 ```
 [patch] All N channels reconnected OK
@@ -67,9 +37,27 @@ touch /path/to/.mcp-reconnect
 
 ---
 
-## Обнаружение обновлений расширения
+## Как это работает
 
-Патч стирается при автообновлении Claude Code. Добавьте эту проверку в скрипт сборки:
+Claude Code VSCode игнорирует `notifications/tools/list_changed` от MCP-серверов ([issue #4118](https://github.com/anthropics/claude-code/issues/4118)). Патч встраивает IIFE в `extension.js`:
+
+```
+setInterval(2000ms)
+  └── изменился mtimeMs файла-флага?
+      └── да → Z.allComms (все открытые чаты)
+                  └── reconnectMcpServer(channelId, serverName)
+```
+
+**Стабильные идентификаторы** (не минифицируются, сохраняются при обновлениях):
+`allComms`, `reconnectMcpServer`
+
+**Что может измениться при обновлении**: минифицированные переменные в якоре вставки (`K`, `Z`, `M6`). При изменении скрипт сообщает об этом явно — адаптация занимает несколько минут.
+
+---
+
+## Поддержание патча актуальным
+
+Claude Code обновляется автоматически и стирает патч. Добавьте проверку в скрипт сборки:
 
 ```bash
 python -c "
@@ -82,9 +70,9 @@ print('OK' if 'MCP auto-reconnect patch' in open(f).read() else 'NEEDS PATCH: '+
 "
 ```
 
-Если выводит `NEEDS PATCH`: запустить `apply_patch.py` + Reload Window.
+Если выводит `NEEDS PATCH`: запустить `apply_patch.py` заново + Reload Window.
 
-Перед повторным патчем стоит проверить release notes — если Anthropic выпустил нативный фикс, патч больше не нужен:
+Перед повторным патчем проверьте, не вышел ли нативный фикс — тогда патч больше не нужен:
 
 ```bash
 gh api repos/anthropics/claude-code/releases/latest --jq '.body' | grep -i mcp
@@ -92,38 +80,28 @@ gh api repos/anthropics/claude-code/releases/latest --jq '.body' | grep -i mcp
 
 ---
 
-## Когда расширение обновляется
+## Адаптация к новой версии расширения
 
 Если `apply_patch.py` выводит `ERROR: anchor not found`:
 
 1. Открыть `extension.js` (путь выводится скриптом)
 2. Найти строку, содержащую одновременно `allComms` и `onDidChangeConfiguration`
-3. Скопировать начало этой строки вплоть до `onDidChangeConfiguration` включительно
-4. Обновить `ANCHOR` в `apply_patch.py`
-5. Запустить скрипт снова
+3. Обновить `ANCHOR` в `apply_patch.py` — скопировать начало этой строки
+4. Запустить скрипт снова
 
 ### История якорей
 
-| Версия | Фрагмент якоря |
-|--------|---------------|
+| Версия | Якорь |
+|--------|-------|
 | v2.1.87 | `K.subscriptions.push(Z),K.subscriptions.push(O6.workspace.onDidChangeConfiguration` |
 | v2.1.88+ | `K.subscriptions.push(Z),K.subscriptions.push(M6.workspace.onDidChangeConfiguration` |
 
-Изменилась только минифицированная переменная пространства имён (`O6` → `M6`). Структурный паттерн — `subscriptions.push(Z)` за которым следует `onDidChangeConfiguration` — стабилен начиная с v2.1.87.
-
----
-
-## Файлы
-
-| Файл | Назначение |
-|------|-----------|
-| `apply_patch.py` | Скрипт применения патча, запускать повторно после каждого обновления расширения |
-| `.mcp-reconnect` | Файл-флаг (добавить в .gitignore); важно только его mtimeMs |
+Структурный паттерн (`subscriptions.push(Z)` + `onDidChangeConfiguration`) стабилен с v2.1.87. Менялась только минифицированная переменная пространства имён.
 
 ---
 
 ## Ограничения
 
-- Только Windows (использует соглашения пути `%USERPROFILE%`)
-- Патчирует установленное расширение на месте; стирается при каждом обновлении Claude Code
-- Проверено на VSCode; на VSCode Insiders и Cursor не тестировалось
+- Только Windows
+- Стирается при каждом обновлении расширения Claude Code
+- На VSCode Insiders и Cursor не тестировалось
