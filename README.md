@@ -12,7 +12,7 @@ This forces you to stay glued to the process and nudge it forward manually.
 
 This patch makes reconnect automatic: the build script updates a flag file and all open chats refresh the MCP server within 2 seconds.
 
-> **Platform**: Windows, VSCode. Tested on Claude Code v2.1.87–v2.1.89.
+> **Platform**: Windows, VSCode. Tested on Claude Code v2.1.87–v2.1.90.
 
 ---
 
