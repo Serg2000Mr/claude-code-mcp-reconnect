@@ -12,7 +12,7 @@
  
 Данный патч делает переподключение автоматическим: скрипт сборки изменяет файл-флаг, и все открытые чаты обновляют нужный MCP-сервер за 2 секунды.
 
-> **Платформа**: Windows, VSCode. Проверено на Claude Code v2.1.87–v2.1.90.
+> **Платформа**: Windows, VSCode. Проверено на Claude Code v2.1.87–v2.1.92.
 
 ---
 
@@ -108,12 +108,13 @@ gh api repos/anthropics/claude-code/releases/latest --jq '.body' | grep -i mcp
 
 ### История якорей
 
-| Версия | Якорь |
-|--------|-------|
-| v2.1.87 | `K.subscriptions.push(Z),K.subscriptions.push(O6.workspace.onDidChangeConfiguration` |
-| v2.1.88+ | `K.subscriptions.push(Z),K.subscriptions.push(M6.workspace.onDidChangeConfiguration` |
+| Версия | Якорь | Переменная allComms |
+|--------|-------|---------------------|
+| v2.1.87 | `K.subscriptions.push(Z),K.subscriptions.push(O6.workspace.onDidChangeConfiguration` | `Z` |
+| v2.1.88–v2.1.91 | `K.subscriptions.push(Z),K.subscriptions.push(M6.workspace.onDidChangeConfiguration` | `Z` |
+| v2.1.92+ | `K.subscriptions.push(q),K.subscriptions.push(M6.workspace.onDidChangeConfiguration` | `q` |
 
-Структурный паттерн (`subscriptions.push(Z)` + `onDidChangeConfiguration`) стабилен с v2.1.87. Менялась только минифицированная переменная пространства имён.
+При изменении переменной allComms нужно обновить и `ANCHOR`, и ссылку `q.allComms` внутри строки `PATCH`.
 
 ---
 

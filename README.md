@@ -12,7 +12,7 @@ This forces you to stay glued to the process and nudge it forward manually.
 
 This patch makes reconnect automatic: the build script updates a flag file and all open chats refresh the MCP server within 2 seconds.
 
-> **Platform**: Windows, VSCode. Tested on Claude Code v2.1.87–v2.1.90.
+> **Platform**: Windows, VSCode. Tested on Claude Code v2.1.87–v2.1.92.
 
 ---
 
@@ -108,12 +108,13 @@ If `apply_patch.py` prints `ERROR: anchor not found`:
 
 ### Anchor history
 
-| Version | Anchor |
-|---------|--------|
-| v2.1.87 | `K.subscriptions.push(Z),K.subscriptions.push(O6.workspace.onDidChangeConfiguration` |
-| v2.1.88+ | `K.subscriptions.push(Z),K.subscriptions.push(M6.workspace.onDidChangeConfiguration` |
+| Version | Anchor | allComms var |
+|---------|--------|--------------|
+| v2.1.87 | `K.subscriptions.push(Z),K.subscriptions.push(O6.workspace.onDidChangeConfiguration` | `Z` |
+| v2.1.88–v2.1.91 | `K.subscriptions.push(Z),K.subscriptions.push(M6.workspace.onDidChangeConfiguration` | `Z` |
+| v2.1.92+ | `K.subscriptions.push(q),K.subscriptions.push(M6.workspace.onDidChangeConfiguration` | `q` |
 
-The structural pattern (`subscriptions.push(Z)` + `onDidChangeConfiguration`) has been stable since v2.1.87. Only the minified namespace variable changed.
+When the allComms variable changes, update both `ANCHOR` and the `q.allComms` reference in the `PATCH` string.
 
 ---
 

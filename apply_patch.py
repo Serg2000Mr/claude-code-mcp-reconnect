@@ -36,7 +36,7 @@ print(f"Target: {EXT_JS}")
 
 # Anchor: right after Z (allComms manager) is pushed to subscriptions.
 # Update ANCHOR when the extension updates — see README for how to find the new one.
-ANCHOR = "K.subscriptions.push(Z),K.subscriptions.push(M6.workspace.onDidChangeConfiguration"
+ANCHOR = "K.subscriptions.push(q),K.subscriptions.push(M6.workspace.onDidChangeConfiguration"
 
 PATCH = (
     '/* --- MCP auto-reconnect patch --- */'
@@ -52,7 +52,7 @@ PATCH = (
     'try{'
     'var ts=fs.statSync(flagPath).mtimeMs;'
     'if(ts<=lastTs)return;'
-    'var comms=Array.from(Z.allComms);'
+    'var comms=Array.from(q.allComms);'
     'if(!comms.length)return;'
     'if(ts!==pendingTs){pendingTs=ts;retries=0;}'
     'inFlight=true;'
